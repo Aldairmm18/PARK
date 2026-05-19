@@ -1,66 +1,73 @@
 package com.timetopark.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.timetopark.ui.components.PrimaryButtonCarretera
+import com.timetopark.domain.models.ParkingLot
+import com.timetopark.ui.components.ErrorMessageCard
+
+sealed class HomeUiState {
+    object Loading : HomeUiState()
+    data class Success(val lots: List<ParkingLot>) : HomeUiState()
+    data class Error(val message: String) : HomeUiState()
+}
 
 @Composable
 fun HomeScreen(
-    onSearchParking: () -> Unit,
-    onSeeDetail: () -> Unit,
+    onSeeDetail: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel()
 ) {
-    val parking by viewModel.featuredParking.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "Timetopark",
+            "Parqueaderos",
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
         )
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(220.dp)
-                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Mapa (placeholder)",
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = "Sugerido: ${parking.name}",
-                color = MaterialTheme.colorScheme.secondary
-            )
+        when (val s = uiState) {
+            is HomeUiState.Loading -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+            is HomeUiState.Error -> ErrorMessageCard(s.message)
+            is HomeUiState.Success -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(s.lots) { lot -> ParkingLotCard(lot, onClick = { onSeeDetail(lot.id) }) }
+            }
         }
-        PrimaryButtonCarretera(text = "Buscar parqueadero", onClick = onSearchParking)
-        PrimaryButtonCarretera(text = "Ver detalle", onClick = onSeeDetail)
-        Spacer(modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun ParkingLotCard(lot: ParkingLot, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(16.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(lot.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Text(lot.address, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("${lot.totalCapacity} cupos", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                Text("$ ${lot.pricePerBlock} / 30 min", color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodySmall)
+            }
+        }
     }
 }

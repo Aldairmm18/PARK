@@ -1,46 +1,52 @@
 package com.timetopark.ui.screens
 
-import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.timetopark.data.models.ParkingSpot
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.timetopark.ui.components.ErrorMessageCard
 import com.timetopark.ui.components.PrimaryButtonCarretera
+import com.timetopark.ui.viewmodels.ParkingDetailUiState
+import com.timetopark.ui.viewmodels.ParkingDetailViewModel
 
 @Composable
 fun ParkingDetailScreen(
+    parkingLotId: Long,
+    onReserve: (Long) -> Unit,
     modifier: Modifier = Modifier,
-    parkingSpot: ParkingSpot = ParkingSpot(
-        name = "Parking Centro 24H",
-        isAvailable = true,
-        slots = 12,
-        ratePerHour = "$5.000/h"
-    )
+    viewModel: ParkingDetailViewModel = viewModel()
 ) {
-    val context = LocalContext.current
+    LaunchedEffect(parkingLotId) { viewModel.load(parkingLotId) }
+    val uiState by viewModel.uiState.collectAsState()
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier = modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(text = "Nombre: ${parkingSpot.name}", color = MaterialTheme.colorScheme.onBackground)
-        Text(
-            text = "Estado: ${if (parkingSpot.isAvailable) "Disponible" else "Lleno"}",
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Text(text = "Cupos: ${parkingSpot.slots}", color = MaterialTheme.colorScheme.onBackground)
-        Text(text = "Tarifa: ${parkingSpot.ratePerHour}", color = MaterialTheme.colorScheme.onBackground)
-        PrimaryButtonCarretera(text = "IR", onClick = {
-            Toast.makeText(context, "Abrir navegación", Toast.LENGTH_SHORT).show()
-        })
+        when (val s = uiState) {
+            is ParkingDetailUiState.Loading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            is ParkingDetailUiState.Error -> ErrorMessageCard(s.message)
+            is ParkingDetailUiState.Success -> {
+                val lot = s.lot
+                Text(lot.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+                Text(lot.address, color = MaterialTheme.colorScheme.secondary)
+                HorizontalDivider(color = MaterialTheme.colorScheme.surface)
+                InfoRow("Capacidad total", "${lot.totalCapacity} cupos")
+                InfoRow("Precio por bloque (30 min)", "$ ${lot.pricePerBlock}")
+                Spacer(Modifier.weight(1f))
+                PrimaryButtonCarretera("Ver disponibilidad") { onReserve(lot.id) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, color = MaterialTheme.colorScheme.secondary)
+        Text(value, color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.SemiBold)
     }
 }
