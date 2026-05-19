@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "ParkNow",
+    "slug": "parknow",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "parknow",
+    "userInterfaceStyle": "light",
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FF6B35"
+      },
+      "package": "com.parknow.app"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permite a ParkNow acceder a la cámara para escanear códigos QR."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

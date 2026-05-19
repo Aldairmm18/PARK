@@ -1,0 +1,193 @@
+-- ParkNow Supabase Schema
+-- Run this in your Supabase SQL Editor
+
+-- ─── Tables ───────────────────────────────────────────────────────────────────
+
+create table if not exists users (
+  id           uuid primary key default gen_random_uuid(),
+  full_name    text not null,
+  phone        text,
+  email        text unique not null,
+  status       text not null default 'ACTIVE',
+  created_at   timestamptz not null default now()
+);
+
+create table if not exists parking_lots (
+  id               uuid primary key default gen_random_uuid(),
+  tenant_id        uuid,
+  name             text not null,
+  total_capacity   int not null,
+  price_per_block  numeric(10,2) not null,
+  address          text,
+  latitude         numeric,
+  longitude        numeric
+);
+
+create table if not exists time_slots (
+  id                  uuid primary key default gen_random_uuid(),
+  parking_lot_id      uuid not null references parking_lots(id) on delete cascade,
+  starts_at           timestamptz not null,
+  ends_at             timestamptz not null,
+  available_capacity  int not null,
+  price_per_block     numeric(10,2)
+);
+
+create table if not exists reservations (
+  id                   uuid primary key default gen_random_uuid(),
+  owner_id             uuid not null references users(id),
+  parking_lot_id       uuid not null references parking_lots(id),
+  vehicle_plate        text not null,
+  starts_at            timestamptz not null,
+  ends_at              timestamptz not null,
+  status               text not null default 'RESERVED',
+  arrival_deadline_at  timestamptz,
+  checked_in_at        timestamptz,
+  checked_out_at       timestamptz,
+  created_at           timestamptz not null default now()
+);
+
+create table if not exists reservation_slots (
+  reservation_id  uuid not null references reservations(id) on delete cascade,
+  slot_id         uuid not null references time_slots(id),
+  primary key (reservation_id, slot_id)
+);
+
+create table if not exists qr_tokens (
+  id              uuid primary key default gen_random_uuid(),
+  reservation_id  uuid not null references reservations(id) on delete cascade,
+  token_hash      text unique not null,
+  purpose         text not null,
+  expires_at      timestamptz not null,
+  used_at         timestamptz
+);
+
+create table if not exists payments (
+  id              uuid primary key default gen_random_uuid(),
+  reservation_id  uuid not null references reservations(id) on delete cascade,
+  type            text not null,
+  amount          numeric(10,2) not null,
+  status          text not null default 'PENDING',
+  created_at      timestamptz not null default now()
+);
+
+create table if not exists check_events (
+  id              uuid primary key default gen_random_uuid(),
+  reservation_id  uuid not null references reservations(id) on delete cascade,
+  qr_token_id     uuid references qr_tokens(id),
+  type            text not null,
+  result          text not null,
+  reason          text,
+  event_at        timestamptz not null default now()
+);
+
+-- ─── RPCs ─────────────────────────────────────────────────────────────────────
+
+create or replace function decrement_slot_capacity(p_slot_id uuid)
+returns void language plpgsql as $$
+begin
+  update time_slots
+  set available_capacity = available_capacity - 1
+  where id = p_slot_id and available_capacity > 0;
+  if not found then
+    raise exception 'No hay capacidad disponible para el slot %', p_slot_id;
+  end if;
+end;
+$$;
+
+create or replace function increment_slot_capacity(p_slot_id uuid)
+returns void language plpgsql as $$
+begin
+  update time_slots
+  set available_capacity = available_capacity + 1
+  where id = p_slot_id;
+end;
+$$;
+
+-- ─── Row Level Security ────────────────────────────────────────────────────────
+
+alter table users enable row level security;
+alter table parking_lots enable row level security;
+alter table time_slots enable row level security;
+alter table reservations enable row level security;
+alter table reservation_slots enable row level security;
+alter table qr_tokens enable row level security;
+alter table payments enable row level security;
+alter table check_events enable row level security;
+
+-- Users: can read/update their own row
+create policy "users_select_own" on users for select using (auth.uid() = id);
+create policy "users_insert_own" on users for insert with check (auth.uid() = id);
+create policy "users_update_own" on users for update using (auth.uid() = id);
+
+-- Parking lots: public read
+create policy "parking_lots_public_read" on parking_lots for select using (true);
+
+-- Time slots: public read
+create policy "time_slots_public_read" on time_slots for select using (true);
+create policy "time_slots_update_rpc" on time_slots for update using (true);
+
+-- Reservations: owner only
+create policy "reservations_select_own" on reservations for select using (auth.uid() = owner_id);
+create policy "reservations_insert_own" on reservations for insert with check (auth.uid() = owner_id);
+create policy "reservations_update_own" on reservations for update using (auth.uid() = owner_id);
+
+-- Reservation slots: owner only (via join)
+create policy "reservation_slots_select_own" on reservation_slots for select
+  using (exists (select 1 from reservations r where r.id = reservation_id and r.owner_id = auth.uid()));
+create policy "reservation_slots_insert_own" on reservation_slots for insert
+  with check (exists (select 1 from reservations r where r.id = reservation_id and r.owner_id = auth.uid()));
+
+-- QR tokens: owner only
+create policy "qr_tokens_select_own" on qr_tokens for select
+  using (exists (select 1 from reservations r where r.id = reservation_id and r.owner_id = auth.uid()));
+create policy "qr_tokens_insert_own" on qr_tokens for insert
+  with check (exists (select 1 from reservations r where r.id = reservation_id and r.owner_id = auth.uid()));
+create policy "qr_tokens_update_own" on qr_tokens for update
+  using (exists (select 1 from reservations r where r.id = reservation_id and r.owner_id = auth.uid()));
+
+-- Payments: owner only
+create policy "payments_select_own" on payments for select
+  using (exists (select 1 from reservations r where r.id = reservation_id and r.owner_id = auth.uid()));
+create policy "payments_insert_own" on payments for insert
+  with check (exists (select 1 from reservations r where r.id = reservation_id and r.owner_id = auth.uid()));
+
+-- Check events: owner only
+create policy "check_events_insert_own" on check_events for insert
+  with check (exists (select 1 from reservations r where r.id = reservation_id and r.owner_id = auth.uid()));
+
+-- ─── Seed Data ────────────────────────────────────────────────────────────────
+
+insert into parking_lots (id, name, total_capacity, price_per_block, address, latitude, longitude)
+values
+  ('11111111-1111-1111-1111-111111111111', 'Los Molinos',  120, 1200, 'El Poblado, Medellín',       6.2008, -75.5740),
+  ('22222222-2222-2222-2222-222222222222', 'El Tesoro',    80,  1500, 'Las Lomas, Medellín',        6.1980, -75.5729),
+  ('33333333-3333-3333-3333-333333333333', 'Unicentro',    200, 1000, 'Laureles-Estadio, Medellín', 6.2431, -75.5742)
+on conflict (id) do nothing;
+
+-- Generate time slots for the next 7 days (30-min blocks, 06:00–22:00)
+do $$
+declare
+  lot_id uuid;
+  lot_capacity int;
+  d date;
+  h int;
+  slot_start timestamptz;
+  slot_end   timestamptz;
+begin
+  for lot_id, lot_capacity in
+    select id, total_capacity from parking_lots
+  loop
+    for d in select generate_series(current_date, current_date + 6, '1 day'::interval)::date loop
+      for h in 0..31 loop  -- 32 half-hour blocks from 06:00 to 22:00
+        slot_start := (d + (time '06:00') + (h * interval '30 minutes'));
+        slot_end   := slot_start + interval '30 minutes';
+        insert into time_slots (parking_lot_id, starts_at, ends_at, available_capacity, price_per_block)
+        values (lot_id, slot_start, slot_end, lot_capacity, (
+          select price_per_block from parking_lots where id = lot_id
+        ))
+        on conflict do nothing;
+      end loop;
+    end loop;
+  end loop;
+end;
+$$;
