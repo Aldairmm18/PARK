@@ -103,7 +103,10 @@ fun LoginScreen(
         if (uiState is LoginUiState.Loading) {
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
         } else {
-            PrimaryButtonCarretera("Iniciar sesión") { viewModel.login(email, password) }
+            PrimaryButtonCarretera(
+                text = "Iniciar sesión",
+                onClick = { viewModel.login(email, password) }
+            )
         }
         Spacer(Modifier.height(16.dp))
         TextButton(onClick = onGoToRegister) {

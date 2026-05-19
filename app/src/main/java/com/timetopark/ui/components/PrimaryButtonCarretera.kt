@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 @Composable
 fun PrimaryButtonCarretera(
     text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
     Button(
         onClick = onClick,

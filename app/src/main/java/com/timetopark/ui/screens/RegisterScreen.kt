@@ -87,9 +87,12 @@ fun RegisterScreen(
         if (uiState is RegisterUiState.Loading) {
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
         } else {
-            PrimaryButtonCarretera("Registrarse") {
-                viewModel.register(fullName, phone, email, password, confirmPassword)
-            }
+            PrimaryButtonCarretera(
+                text = "Registrarse",
+                onClick = {
+                    viewModel.register(fullName, phone, email, password, confirmPassword)
+                }
+            )
         }
         TextButton(onClick = onGoToLogin) {
             Text("¿Ya tienes cuenta? Inicia sesión", color = MaterialTheme.colorScheme.secondary)

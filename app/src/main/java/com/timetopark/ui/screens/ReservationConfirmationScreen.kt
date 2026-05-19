@@ -39,7 +39,10 @@ fun ReservationConfirmationScreen(
             is ConfirmationUiState.Loading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             is ConfirmationUiState.Error -> {
                 ErrorMessageCard(s.message)
-                PrimaryButtonCarretera("Volver al inicio", onClick = onGoHome)
+                PrimaryButtonCarretera(
+                    text = "Volver al inicio",
+                    onClick = onGoHome
+                )
             }
             is ConfirmationUiState.Success -> {
                 Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(64.dp))
@@ -53,7 +56,10 @@ fun ReservationConfirmationScreen(
                 Text("Tienes hasta las ${s.reservation.arrivalDeadlineAt.format(DateTimeFormatter.ofPattern("HH:mm"))} para ingresar", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
 
                 Spacer(Modifier.weight(1f))
-                PrimaryButtonCarretera("Ir al inicio", onClick = onGoHome)
+                PrimaryButtonCarretera(
+                    text = "Ir al inicio",
+                    onClick = onGoHome
+                )
             }
         }
     }

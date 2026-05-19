@@ -74,7 +74,10 @@ fun PaymentScreen(
                 if (s.error != null) ErrorMessageCard(s.error)
 
                 Spacer(Modifier.weight(1f))
-                PrimaryButtonCarretera("Pagar y reservar") { viewModel.confirmPayment(vehiclePlate) }
+                PrimaryButtonCarretera(
+                    text = "Pagar y reservar",
+                    onClick = { viewModel.confirmPayment(vehiclePlate) }
+                )
             }
             is PaymentUiState.Success -> {
                 // Navegación manejada por LaunchedEffect

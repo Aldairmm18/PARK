@@ -1,0 +1,40 @@
+# Variables de entorno
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.pyo
+
+# Node / Expo
+node_modules/
+.expo/
+dist/
+build/
+
+# Credenciales
+*.pem
+*.key
+secrets.json
+google-services.json
+GoogleService-Info.plist
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Android / Gradle
+.gradle/
+.idea/
+*.iml
+local.properties
+.cxx/
+**/build/

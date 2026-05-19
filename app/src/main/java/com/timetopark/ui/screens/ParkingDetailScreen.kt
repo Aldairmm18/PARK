@@ -37,7 +37,10 @@ fun ParkingDetailScreen(
                 InfoRow("Capacidad total", "${lot.totalCapacity} cupos")
                 InfoRow("Precio por bloque (30 min)", "$ ${lot.pricePerBlock}")
                 Spacer(Modifier.weight(1f))
-                PrimaryButtonCarretera("Ver disponibilidad") { onReserve(lot.id) }
+                PrimaryButtonCarretera(
+                    text = "Ver disponibilidad",
+                    onClick = { onReserve(lot.id) }
+                )
             }
         }
     }

@@ -2,7 +2,7 @@ package com.timetopark.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Settings
@@ -67,7 +67,7 @@ fun TimetoparkNavHost() {
             if (showTopBar) {
                 TopBarCarretera(
                     title = topBarTitle,
-                    navigationIcon = if (isDetailLike) Icons.Filled.ArrowBack else null,
+                    navigationIcon = if (isDetailLike) Icons.AutoMirrored.Filled.ArrowBack else null,
                     onNavigationClick = if (isDetailLike) ({ navController.popBackStack() }) else null
                 )
             }
@@ -157,6 +157,7 @@ fun TimetoparkNavHost() {
                 val lotId = backStack.arguments?.getLong("lotId") ?: return@composable
                 AvailabilityScreen(
                     parkingLotId = lotId,
+                    onBack = { navController.popBackStack() },
                     onProceedToPayment = { l, s, e -> navController.navigate(Routes.Payment.create(l, s, e)) }
                 )
             }
