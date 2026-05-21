@@ -45,10 +45,10 @@ export default function PaymentScreen() {
     try {
       const user = await authService.currentUser();
       if (!user) throw new Error('No autenticado');
-      const reservation = await reservationService.createReservation({
-        userId: user.id,
+      const { reservation } = await reservationService.createReservation({
+        ownerId: user.id,
         parkingLotId: parkingId!,
-        slotIds: slots,
+        selectedSlots: slots.map(id => ({ id, startsAt: startsAt!, endsAt: endsAt! })),
         vehiclePlate: plate.trim().toUpperCase(),
       });
       router.replace(`/parking/confirmation?reservationId=${reservation.id}` as any);

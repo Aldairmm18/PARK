@@ -26,6 +26,7 @@ export interface TimeSlot {
   startsAt: string;
   endsAt: string;
   availableCapacity: number;
+  pricePerBlock?: number;
 }
 
 export interface Reservation {

@@ -32,7 +32,7 @@ export default function ScannerScreen() {
         const result = await checkEventService.validateEntry(data);
         Alert.alert(
           result.success ? 'Entrada permitida' : 'Acceso denegado',
-          result.message,
+          result.success ? 'Ingreso registrado correctamente' : (result.reason ?? 'QR inválido'),
           [{ text: 'OK', onPress: () => setScanned(false) }],
           { cancelable: false }
         );
@@ -40,7 +40,7 @@ export default function ScannerScreen() {
         const result = await checkEventService.validateExit(data);
         Alert.alert(
           result.success ? 'Salida registrada' : 'Error al salir',
-          result.message,
+          result.success ? 'Salida registrada correctamente' : (result.reason ?? 'QR inválido'),
           [{ text: 'OK', onPress: () => setScanned(false) }],
           { cancelable: false }
         );
@@ -78,7 +78,7 @@ export default function ScannerScreen() {
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.center}>
-          <Ionicons name="camera-off-outline" size={48} color={Colors.textMuted} />
+          <Ionicons name="camera-outline" size={48} color={Colors.textMuted} />
           <Text style={styles.permText}>Se requiere acceso a la cámara</Text>
           <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
             <Text style={styles.permBtnText}>Permitir cámara</Text>
