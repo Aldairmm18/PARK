@@ -1,4 +1,4 @@
-import { OwnerType, VehicleType, ReservationStatus, QRPurpose, PaymentType, PaymentStatus, UserStatus } from './enums';
+import { VehicleType, ReservationStatus, QRPurpose, PaymentType, PaymentStatus, UserStatus } from './enums';
 
 export interface User {
   id: string;
@@ -34,7 +34,6 @@ export interface TimeSlot {
 export interface Reservation {
   id: string;
   ownerId: string;
-  ownerType: OwnerType;
   parkingLotId: string;
   vehiclePlate: string;
   startsAt: string;

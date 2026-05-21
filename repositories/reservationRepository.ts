@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Reservation, QRToken, Payment } from '@/domain/models';
-import { ReservationStatus, QRPurpose, PaymentType, PaymentStatus, OwnerType, VehicleType } from '@/domain/enums';
+import { ReservationStatus, QRPurpose, PaymentType, PaymentStatus, VehicleType } from '@/domain/enums';
 
 export const reservationRepository = {
   async assignSpot(
@@ -43,7 +43,6 @@ export const reservationRepository = {
       .from('reservations')
       .insert({
         owner_id: params.ownerId,
-        owner_type: OwnerType.USER,
         parking_lot_id: params.parkingLotId,
         vehicle_plate: params.vehiclePlate,
         vehicle_type: params.vehicleType,
@@ -195,7 +194,6 @@ function mapReservation(row: any): Reservation {
   return {
     id:               row.id,
     ownerId:          row.owner_id,
-    ownerType:        row.owner_type as OwnerType,
     parkingLotId:     row.parking_lot_id,
     vehiclePlate:     row.vehicle_plate,
     startsAt:         row.starts_at,
