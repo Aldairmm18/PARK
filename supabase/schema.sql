@@ -17,6 +17,8 @@ create table if not exists parking_lots (
   tenant_id        uuid,
   name             text not null,
   total_capacity   int not null,
+  car_capacity     int not null default 0,
+  moto_capacity    int not null default 0,
   price_per_block  numeric(10,2) not null,
   address          text,
   latitude         numeric,
@@ -37,12 +39,15 @@ create table if not exists reservations (
   owner_id             uuid not null references users(id),
   parking_lot_id       uuid not null references parking_lots(id),
   vehicle_plate        text not null,
+  vehicle_type         text not null default 'CAR',
   starts_at            timestamptz not null,
   ends_at              timestamptz not null,
   status               text not null default 'RESERVED',
   arrival_deadline_at  timestamptz,
   checked_in_at        timestamptz,
   checked_out_at       timestamptz,
+  assigned_floor       int,
+  assigned_spot        int,
   created_at           timestamptz not null default now()
 );
 
@@ -157,11 +162,11 @@ create policy "check_events_insert_own" on check_events for insert
 
 -- ─── Seed Data ────────────────────────────────────────────────────────────────
 
-insert into parking_lots (id, name, total_capacity, price_per_block, address, latitude, longitude)
+insert into parking_lots (id, name, total_capacity, car_capacity, moto_capacity, price_per_block, address, latitude, longitude)
 values
-  ('11111111-1111-1111-1111-111111111111', 'Los Molinos',  120, 1200, 'El Poblado, Medellín',       6.2008, -75.5740),
-  ('22222222-2222-2222-2222-222222222222', 'El Tesoro',    80,  1500, 'Las Lomas, Medellín',        6.1980, -75.5729),
-  ('33333333-3333-3333-3333-333333333333', 'Unicentro',    200, 1000, 'Laureles-Estadio, Medellín', 6.2431, -75.5742)
+  ('11111111-1111-1111-1111-111111111111', 'Los Molinos',  120, 80, 40,  1200, 'El Poblado, Medellín',       6.2008, -75.5740),
+  ('22222222-2222-2222-2222-222222222222', 'El Tesoro',    80,  60, 20,  1500, 'Las Lomas, Medellín',        6.1980, -75.5729),
+  ('33333333-3333-3333-3333-333333333333', 'Unicentro',    200, 140, 60, 1000, 'Laureles-Estadio, Medellín', 6.2431, -75.5742)
 on conflict (id) do nothing;
 
 -- Generate time slots for the next 7 days (30-min blocks, 06:00–22:00)

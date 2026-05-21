@@ -104,6 +104,13 @@ export default function ConfirmationScreen() {
           {reservation.vehiclePlate && (
             <InfoRow icon="car-outline" label="Placa" value={reservation.vehiclePlate} />
           )}
+          {reservation.vehicleType && (
+            <InfoRow
+              icon={reservation.vehicleType === 'MOTORCYCLE' ? 'bicycle-outline' : 'car-outline'}
+              label="Tipo de vehículo"
+              value={reservation.vehicleType === 'MOTORCYCLE' ? 'Motocicleta' : 'Carro'}
+            />
+          )}
           {reservation.assignedFloor != null && reservation.assignedSpot != null && (
             <InfoRow
               icon="business-outline"

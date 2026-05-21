@@ -65,6 +65,8 @@ function mapLot(row: any): ParkingLot {
     tenantId:      row.tenant_id,
     name:          row.name,
     totalCapacity: row.total_capacity,
+    carCapacity:   row.car_capacity ?? Math.floor(row.total_capacity * 0.7),
+    motoCapacity:  row.moto_capacity ?? Math.floor(row.total_capacity * 0.3),
     pricePerBlock: Number(row.price_per_block),
     address:       row.address ?? '',
     latitude:      row.latitude,

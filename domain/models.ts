@@ -1,4 +1,4 @@
-import { OwnerType, ReservationStatus, QRPurpose, PaymentType, PaymentStatus, UserStatus } from './enums';
+import { OwnerType, VehicleType, ReservationStatus, QRPurpose, PaymentType, PaymentStatus, UserStatus } from './enums';
 
 export interface User {
   id: string;
@@ -14,6 +14,8 @@ export interface ParkingLot {
   tenantId: string;
   name: string;
   totalCapacity: number;
+  carCapacity: number;
+  motoCapacity: number;
   pricePerBlock: number;
   address: string;
   latitude?: number;
@@ -44,6 +46,7 @@ export interface Reservation {
   createdAt: string;
   assignedFloor?: number;
   assignedSpot?: number;
+  vehicleType?: VehicleType;
 }
 
 export interface QRToken {

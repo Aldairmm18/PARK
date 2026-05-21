@@ -2,13 +2,14 @@ import { addMinutes, differenceInMinutes, parseISO } from 'date-fns';
 import { reservationRepository } from '@/repositories/reservationRepository';
 import { parkingRepository } from '@/repositories/parkingRepository';
 import { Reservation, QRToken } from '@/domain/models';
-import { ReservationStatus, QRPurpose, PaymentType, PaymentStatus } from '@/domain/enums';
+import { ReservationStatus, QRPurpose, PaymentType, PaymentStatus, VehicleType } from '@/domain/enums';
 
 export const reservationService = {
   async createReservation(params: {
     ownerId: string;
     parkingLotId: string;
     vehiclePlate: string;
+    vehicleType: VehicleType;
     selectedSlots: { id: string; startsAt: string; endsAt: string }[];
   }): Promise<{ reservation: Reservation; qrToken: QRToken }> {
     if (params.selectedSlots.length === 0) throw new Error('Selecciona al menos un bloque horario');
@@ -33,9 +34,14 @@ export const reservationService = {
     }
 
     const lot = await parkingRepository.getById(params.parkingLotId);
+    const typeCapacity = params.vehicleType === VehicleType.MOTORCYCLE
+      ? (lot?.motoCapacity ?? 30)
+      : (lot?.carCapacity ?? 70);
+
     const { floor, spot } = await reservationRepository.assignSpot(
       params.parkingLotId,
-      lot?.totalCapacity ?? 100,
+      params.vehicleType,
+      typeCapacity,
       startsAt,
       endsAt,
     );
@@ -44,6 +50,7 @@ export const reservationService = {
       ownerId: params.ownerId,
       parkingLotId: params.parkingLotId,
       vehiclePlate: params.vehiclePlate.toUpperCase().trim(),
+      vehicleType: params.vehicleType,
       startsAt,
       endsAt,
       arrivalDeadlineAt,

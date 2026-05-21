@@ -1,20 +1,27 @@
 import { supabase } from '@/lib/supabase';
 import { Reservation, QRToken, Payment } from '@/domain/models';
-import { ReservationStatus, QRPurpose, PaymentType, PaymentStatus, OwnerType } from '@/domain/enums';
+import { ReservationStatus, QRPurpose, PaymentType, PaymentStatus, OwnerType, VehicleType } from '@/domain/enums';
 
 export const reservationRepository = {
-  async assignSpot(parkingLotId: string, totalCapacity: number, startsAt: string, endsAt: string): Promise<{ floor: number; spot: number }> {
-    const SPOTS_PER_FLOOR = 20;
+  async assignSpot(
+    parkingLotId: string,
+    vehicleType: VehicleType,
+    typeCapacity: number,
+    startsAt: string,
+    endsAt: string,
+  ): Promise<{ floor: number; spot: number }> {
+    const SPOTS_PER_FLOOR = 10;
     const { data } = await supabase
       .from('reservations')
       .select('assigned_spot')
       .eq('parking_lot_id', parkingLotId)
+      .eq('vehicle_type', vehicleType)
       .in('status', [ReservationStatus.RESERVED, ReservationStatus.CHECKED_IN])
       .lt('starts_at', endsAt)
       .gt('ends_at', startsAt);
     const usedSpots = new Set((data ?? []).map((r: any) => r.assigned_spot).filter(Boolean));
     let spotNumber = 1;
-    while (usedSpots.has(spotNumber) && spotNumber <= totalCapacity) spotNumber++;
+    while (usedSpots.has(spotNumber) && spotNumber <= typeCapacity) spotNumber++;
     return {
       floor: Math.ceil(spotNumber / SPOTS_PER_FLOOR),
       spot: ((spotNumber - 1) % SPOTS_PER_FLOOR) + 1,
@@ -25,6 +32,7 @@ export const reservationRepository = {
     ownerId: string;
     parkingLotId: string;
     vehiclePlate: string;
+    vehicleType: VehicleType;
     startsAt: string;
     endsAt: string;
     arrivalDeadlineAt: string;
@@ -38,6 +46,7 @@ export const reservationRepository = {
         owner_type: OwnerType.USER,
         parking_lot_id: params.parkingLotId,
         vehicle_plate: params.vehiclePlate,
+        vehicle_type: params.vehicleType,
         starts_at: params.startsAt,
         ends_at: params.endsAt,
         status: ReservationStatus.RESERVED,
@@ -198,6 +207,7 @@ function mapReservation(row: any): Reservation {
     createdAt:        row.created_at,
     assignedFloor:    row.assigned_floor ?? undefined,
     assignedSpot:     row.assigned_spot ?? undefined,
+    vehicleType:      row.vehicle_type as VehicleType ?? undefined,
   };
 }
 

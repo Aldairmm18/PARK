@@ -12,8 +12,10 @@ import { ErrorMessage } from '@/components/ErrorMessage';
 import { reservationService } from '@/services/reservationService';
 import { authService } from '@/services/authService';
 import { ScreenState } from '@/domain/models';
+import { VehicleType } from '@/domain/enums';
 
-const PLATE_REGEX = /^[A-Z]{3}[0-9]{3}$/i;
+const PLATE_CAR  = /^[A-Z]{3}[0-9]{3}$/i;
+const PLATE_MOTO = /^[A-Z]{3}[0-9]{2}$/i;
 
 export default function PaymentScreen() {
   const { parkingId, slotIds, startsAt, endsAt, totalPrice } = useLocalSearchParams<{
@@ -24,6 +26,7 @@ export default function PaymentScreen() {
     totalPrice: string;
   }>();
   const router = useRouter();
+  const [vehicleType, setVehicleType] = useState<VehicleType>(VehicleType.CAR);
   const [plate, setPlate] = useState('');
   const [state, setState] = useState<ScreenState<string>>({ status: 'idle' });
 
@@ -32,13 +35,18 @@ export default function PaymentScreen() {
   const start = startsAt ? new Date(startsAt) : new Date();
   const end = endsAt ? new Date(endsAt) : new Date();
 
+  const isCar = vehicleType === VehicleType.CAR;
+  const plateRegex = isCar ? PLATE_CAR : PLATE_MOTO;
+  const plateHint  = isCar ? '3 letras + 3 números  (ej: ABC123)' : '3 letras + 2 números  (ej: ABC12)';
+  const maxLength  = isCar ? 6 : 5;
+
   const handleConfirm = async () => {
     if (!plate.trim()) {
       setState({ status: 'error', error: 'Ingresa la placa del vehículo' });
       return;
     }
-    if (!PLATE_REGEX.test(plate.trim())) {
-      setState({ status: 'error', error: 'Formato de placa inválido (ej: ABC123)' });
+    if (!plateRegex.test(plate.trim())) {
+      setState({ status: 'error', error: `Formato inválido — ${plateHint}` });
       return;
     }
     setState({ status: 'loading' });
@@ -48,6 +56,7 @@ export default function PaymentScreen() {
       const { reservation } = await reservationService.createReservation({
         ownerId: user.id,
         parkingLotId: parkingId!,
+        vehicleType,
         selectedSlots: slots.map(id => ({ id, startsAt: startsAt!, endsAt: endsAt! })),
         vehiclePlate: plate.trim().toUpperCase(),
       });
@@ -69,61 +78,52 @@ export default function PaymentScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          {/* Tipo de vehículo */}
+          <View style={styles.typeCard}>
+            <Text style={styles.typeTitle}>Tipo de vehículo</Text>
+            <View style={styles.typeRow}>
+              <TouchableOpacity
+                style={[styles.typeBtn, isCar && styles.typeBtnActive]}
+                onPress={() => { setVehicleType(VehicleType.CAR); setPlate(''); }}
+              >
+                <Ionicons name="car-outline" size={22} color={isCar ? '#fff' : Colors.textSecondary} />
+                <Text style={[styles.typeBtnText, isCar && styles.typeBtnTextActive]}>Carro</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.typeBtn, !isCar && styles.typeBtnActive]}
+                onPress={() => { setVehicleType(VehicleType.MOTORCYCLE); setPlate(''); }}
+              >
+                <Ionicons name="bicycle-outline" size={22} color={!isCar ? '#fff' : Colors.textSecondary} />
+                <Text style={[styles.typeBtnText, !isCar && styles.typeBtnTextActive]}>Moto</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Resumen */}
           <View style={styles.summaryCard}>
             <Text style={styles.summaryTitle}>Resumen</Text>
-
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryIcon}>
-                <Ionicons name="time-outline" size={18} color={Colors.accent} />
-              </View>
-              <View>
-                <Text style={styles.summaryLabel}>Inicio</Text>
-                <Text style={styles.summaryValue}>
-                  {format(start, "EEE d MMM · HH:mm", { locale: es })}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryIcon}>
-                <Ionicons name="flag-outline" size={18} color={Colors.accent} />
-              </View>
-              <View>
-                <Text style={styles.summaryLabel}>Fin</Text>
-                <Text style={styles.summaryValue}>
-                  {format(end, "EEE d MMM · HH:mm", { locale: es })}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryIcon}>
-                <Ionicons name="layers-outline" size={18} color={Colors.accent} />
-              </View>
-              <View>
-                <Text style={styles.summaryLabel}>Bloques</Text>
-                <Text style={styles.summaryValue}>{slots.length} × 30 min</Text>
-              </View>
-            </View>
-
+            <SummaryRow icon="time-outline" label="Inicio" value={format(start, "EEE d MMM · HH:mm", { locale: es })} />
+            <SummaryRow icon="flag-outline" label="Fin" value={format(end, "EEE d MMM · HH:mm", { locale: es })} />
+            <SummaryRow icon="layers-outline" label="Bloques" value={`${slots.length} × 30 min`} />
             <View style={[styles.summaryRow, styles.totalRow]}>
               <Text style={styles.totalLabel}>Total</Text>
               <Text style={styles.totalValue}>${price.toLocaleString('es-CO')} COP</Text>
             </View>
           </View>
 
+          {/* Placa */}
           <View style={styles.plateSection}>
             <Text style={styles.plateLabel}>Placa del vehículo</Text>
             <TextInput
               style={styles.plateInput}
               value={plate}
               onChangeText={t => setPlate(t.toUpperCase())}
-              placeholder="ABC123"
+              placeholder={isCar ? 'ABC123' : 'ABC12'}
               placeholderTextColor={Colors.textMuted}
               autoCapitalize="characters"
-              maxLength={6}
+              maxLength={maxLength}
             />
-            <Text style={styles.plateHint}>Formato: 3 letras + 3 números</Text>
+            <Text style={styles.plateHint}>{plateHint}</Text>
           </View>
 
           {state.status === 'error' && (
@@ -151,6 +151,20 @@ export default function PaymentScreen() {
   );
 }
 
+function SummaryRow({ icon, label, value }: { icon: any; label: string; value: string }) {
+  return (
+    <View style={styles.summaryRow}>
+      <View style={styles.summaryIcon}>
+        <Ionicons name={icon} size={18} color={Colors.accent} />
+      </View>
+      <View>
+        <Text style={styles.summaryLabel}>{label}</Text>
+        <Text style={styles.summaryValue}>{value}</Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   flex:              { flex: 1 },
   safe:              { flex: 1, backgroundColor: Colors.background },
@@ -158,6 +172,13 @@ const styles = StyleSheet.create({
   backBtn:           { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   topTitle:          { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
   content:           { padding: 16, gap: 16 },
+  typeCard:          { backgroundColor: Colors.surface, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: Colors.border },
+  typeTitle:         { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, marginBottom: 12 },
+  typeRow:           { flexDirection: 'row', gap: 12 },
+  typeBtn:           { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.background },
+  typeBtnActive:     { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  typeBtnText:       { fontSize: 15, fontWeight: '600', color: Colors.textSecondary },
+  typeBtnTextActive: { color: '#fff' },
   summaryCard:       { backgroundColor: Colors.surface, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: Colors.border, gap: 4 },
   summaryTitle:      { fontSize: 17, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
   summaryRow:        { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 12 },

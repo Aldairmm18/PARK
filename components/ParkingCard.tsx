@@ -26,7 +26,11 @@ export function ParkingCard({ parking, availableSlots, onPress }: Props) {
       <View style={styles.footer}>
         <View style={styles.footerItem}>
           <Ionicons name="car-outline" size={14} color={Colors.textSecondary} />
-          <Text style={styles.footerText}>{parking.totalCapacity} total</Text>
+          <Text style={styles.footerText}>{parking.carCapacity} carros</Text>
+        </View>
+        <View style={styles.footerItem}>
+          <Ionicons name="bicycle-outline" size={14} color={Colors.textSecondary} />
+          <Text style={styles.footerText}>{parking.motoCapacity} motos</Text>
         </View>
         <View style={styles.footerItem}>
           <Ionicons name="time-outline" size={14} color={Colors.textSecondary} />

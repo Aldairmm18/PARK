@@ -1,3 +1,8 @@
+export enum VehicleType {
+  CAR        = 'CAR',
+  MOTORCYCLE = 'MOTORCYCLE',
+}
+
 export enum OwnerType {
   USER   = 'USER',
   CLIENT = 'CLIENT',
