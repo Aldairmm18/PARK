@@ -36,12 +36,31 @@ export const parkingRepository = {
   },
 
   async decrementCapacity(slotId: string): Promise<void> {
-    const { error } = await supabase.rpc('decrement_slot_capacity', { slot_id: slotId });
+    const { data, error: readErr } = await supabase
+      .from('time_slots')
+      .select('available_capacity')
+      .eq('id', slotId)
+      .single();
+    if (readErr) throw new Error(readErr.message);
+    if (!data || data.available_capacity <= 0) throw new Error('Sin cupos disponibles en el bloque seleccionado');
+    const { error } = await supabase
+      .from('time_slots')
+      .update({ available_capacity: data.available_capacity - 1 })
+      .eq('id', slotId);
     if (error) throw new Error(error.message);
   },
 
   async incrementCapacity(slotId: string): Promise<void> {
-    const { error } = await supabase.rpc('increment_slot_capacity', { slot_id: slotId });
+    const { data, error: readErr } = await supabase
+      .from('time_slots')
+      .select('available_capacity')
+      .eq('id', slotId)
+      .single();
+    if (readErr) throw new Error(readErr.message);
+    const { error } = await supabase
+      .from('time_slots')
+      .update({ available_capacity: (data?.available_capacity ?? 0) + 1 })
+      .eq('id', slotId);
     if (error) throw new Error(error.message);
   },
 
