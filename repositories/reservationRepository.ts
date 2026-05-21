@@ -3,6 +3,24 @@ import { Reservation, QRToken, Payment } from '@/domain/models';
 import { ReservationStatus, QRPurpose, PaymentType, PaymentStatus, OwnerType } from '@/domain/enums';
 
 export const reservationRepository = {
+  async assignSpot(parkingLotId: string, totalCapacity: number, startsAt: string, endsAt: string): Promise<{ floor: number; spot: number }> {
+    const SPOTS_PER_FLOOR = 20;
+    const { data } = await supabase
+      .from('reservations')
+      .select('assigned_spot')
+      .eq('parking_lot_id', parkingLotId)
+      .in('status', [ReservationStatus.RESERVED, ReservationStatus.CHECKED_IN])
+      .lt('starts_at', endsAt)
+      .gt('ends_at', startsAt);
+    const usedSpots = new Set((data ?? []).map((r: any) => r.assigned_spot).filter(Boolean));
+    let spotNumber = 1;
+    while (usedSpots.has(spotNumber) && spotNumber <= totalCapacity) spotNumber++;
+    return {
+      floor: Math.ceil(spotNumber / SPOTS_PER_FLOOR),
+      spot: ((spotNumber - 1) % SPOTS_PER_FLOOR) + 1,
+    };
+  },
+
   async create(params: {
     ownerId: string;
     parkingLotId: string;
@@ -10,6 +28,8 @@ export const reservationRepository = {
     startsAt: string;
     endsAt: string;
     arrivalDeadlineAt: string;
+    assignedFloor: number;
+    assignedSpot: number;
   }): Promise<Reservation> {
     const { data, error } = await supabase
       .from('reservations')
@@ -22,6 +42,8 @@ export const reservationRepository = {
         ends_at: params.endsAt,
         status: ReservationStatus.RESERVED,
         arrival_deadline_at: params.arrivalDeadlineAt,
+        assigned_floor: params.assignedFloor,
+        assigned_spot: params.assignedSpot,
       })
       .select()
       .single();
@@ -174,6 +196,8 @@ function mapReservation(row: any): Reservation {
     checkedInAt:      row.checked_in_at,
     checkedOutAt:     row.checked_out_at,
     createdAt:        row.created_at,
+    assignedFloor:    row.assigned_floor ?? undefined,
+    assignedSpot:     row.assigned_spot ?? undefined,
   };
 }
 

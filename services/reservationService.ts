@@ -32,6 +32,14 @@ export const reservationService = {
       await parkingRepository.decrementCapacity(slot.id);
     }
 
+    const lot = await parkingRepository.getById(params.parkingLotId);
+    const { floor, spot } = await reservationRepository.assignSpot(
+      params.parkingLotId,
+      lot?.totalCapacity ?? 100,
+      startsAt,
+      endsAt,
+    );
+
     const reservation = await reservationRepository.create({
       ownerId: params.ownerId,
       parkingLotId: params.parkingLotId,
@@ -39,6 +47,8 @@ export const reservationService = {
       startsAt,
       endsAt,
       arrivalDeadlineAt,
+      assignedFloor: floor,
+      assignedSpot: spot,
     });
 
     const tokenHash = `QR-ENTRY-${reservation.id}-${Date.now()}`;
@@ -49,7 +59,6 @@ export const reservationService = {
       expiresAt: arrivalDeadlineAt,
     });
 
-    const lot = await parkingRepository.getById(params.parkingLotId);
     const amount = (lot?.pricePerBlock ?? 0) * sorted.length;
     await reservationRepository.createPayment({
       reservationId: reservation.id,

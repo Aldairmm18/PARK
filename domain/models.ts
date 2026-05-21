@@ -42,6 +42,8 @@ export interface Reservation {
   checkedInAt?: string;
   checkedOutAt?: string;
   createdAt: string;
+  assignedFloor?: number;
+  assignedSpot?: number;
 }
 
 export interface QRToken {

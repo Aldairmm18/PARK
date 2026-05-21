@@ -83,6 +83,11 @@ export default function ReservasScreen() {
           {' — '}
           {format(new Date(item.endsAt), "HH:mm")}
         </Text>
+        {item.assignedFloor != null && item.assignedSpot != null && (
+          <Text style={styles.spotText}>
+            📍 Piso {item.assignedFloor} · Espacio {item.assignedSpot}
+          </Text>
+        )}
       </View>
       {canCancel(item) && (
         <TouchableOpacity
@@ -144,6 +149,7 @@ const styles = StyleSheet.create({
   parkingName: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, flex: 1, marginRight: 8 },
   cardBody:    { marginBottom: 4 },
   dateText:    { fontSize: 13, color: Colors.textSecondary },
+  spotText:    { fontSize: 13, color: Colors.accent, fontWeight: '600', marginTop: 4 },
   cancelBtn:   { marginTop: 12, paddingVertical: 8, alignItems: 'center', borderRadius: 8, borderWidth: 1, borderColor: Colors.error },
   cancelText:  { color: Colors.error, fontWeight: '600', fontSize: 14 },
   center:      { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },

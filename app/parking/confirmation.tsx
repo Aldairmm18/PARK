@@ -104,6 +104,14 @@ export default function ConfirmationScreen() {
           {reservation.vehiclePlate && (
             <InfoRow icon="car-outline" label="Placa" value={reservation.vehiclePlate} />
           )}
+          {reservation.assignedFloor != null && reservation.assignedSpot != null && (
+            <InfoRow
+              icon="business-outline"
+              label="Tu espacio asignado"
+              value={`Piso ${reservation.assignedFloor} · Espacio ${reservation.assignedSpot}`}
+              valueColor={Colors.accent}
+            />
+          )}
         </View>
 
         {isActive && qrValue ? (
