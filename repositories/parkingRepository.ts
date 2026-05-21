@@ -79,5 +79,6 @@ function mapSlot(row: any): TimeSlot {
     startsAt:          row.starts_at,
     endsAt:            row.ends_at,
     availableCapacity: row.available_capacity,
+    pricePerBlock:     row.price_per_block ? Number(row.price_per_block) : undefined,
   };
 }

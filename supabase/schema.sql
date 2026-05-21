@@ -82,24 +82,24 @@ create table if not exists check_events (
 
 -- ─── RPCs ─────────────────────────────────────────────────────────────────────
 
-create or replace function decrement_slot_capacity(p_slot_id uuid)
+create or replace function decrement_slot_capacity(slot_id uuid)
 returns void language plpgsql as $$
 begin
   update time_slots
   set available_capacity = available_capacity - 1
-  where id = p_slot_id and available_capacity > 0;
+  where id = slot_id and available_capacity > 0;
   if not found then
-    raise exception 'No hay capacidad disponible para el slot %', p_slot_id;
+    raise exception 'No hay capacidad disponible para el slot %', slot_id;
   end if;
 end;
 $$;
 
-create or replace function increment_slot_capacity(p_slot_id uuid)
+create or replace function increment_slot_capacity(slot_id uuid)
 returns void language plpgsql as $$
 begin
   update time_slots
   set available_capacity = available_capacity + 1
-  where id = p_slot_id;
+  where id = slot_id;
 end;
 $$;
 
